@@ -1,0 +1,18 @@
+﻿Stationsnamn: Visby Flygplats
+Klimatnummer: 78400
+Mäthöjd (meter över marken): 2.0
+
+Höjd (meter över havet): 42.0
+Latitud (decimalgrader): 57.6614
+Longitud (decimalgrader): 18.3428
+
+Mätvärdena är strukturerad enligt följande:
+
+Datum;Tid (UTC);Lufttemperatur;Kvalitet
+
+Kvalitetskoderna:
+- Grön (G) = Kontrollerade och godkända värden.
+- Gul (Y) = Misstänkta eller aggregerade värden. Grovt kontrollerade arkivdata och okontrollerade realtidsdata (senaste 2 tim).
+
+Orsaker till saknade data:
+- Stationen eller givaren har varit ur funktion.
