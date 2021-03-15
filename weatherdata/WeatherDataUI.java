@@ -34,23 +34,23 @@ public class WeatherDataUI
 
 		System.out.println("** Weather Data **");
 
-		while(!quit)
+		while (!quit)
 		{
 			input = getNumberInput(_scanner, 1, 4, getMainMenu());
 
-			switch(input)
+			switch (input)
 			{
-				case 1:
-					averageTemperature();
-					break;
-				case 2:
-					missingValues();
-					break;
-				case 3:
-					approvedValues();
-					break;
-				case 4:
-					quit = true;
+			case 1:
+				averageTemperature();
+				break;
+			case 2:
+				missingValues();
+				break;
+			case 3:
+				approvedValues();
+				break;
+			case 4:
+				quit = true;
 			}
 		}
 		// Close scanner to free resources
@@ -61,8 +61,8 @@ public class WeatherDataUI
 	 * Get input and translate it to a valid number.
 	 *
 	 * @param scanner the Scanner we use to get input
-	 * @param min the lowest valid number
-	 * @param max the highest valid number
+	 * @param min     the lowest valid number
+	 * @param max     the highest valid number
 	 * @param message message to user
 	 * @return input translated to valid number
 	 */
@@ -71,18 +71,18 @@ public class WeatherDataUI
 		int input = 0;
 		boolean validInput = false;
 
-		while(!validInput)
+		while (!validInput)
 		{
 			System.out.println(message);
 			try
 			{
 				input = Integer.parseInt(scanner.nextLine().trim());
 			}
-			catch(NumberFormatException nfe)
+			catch (NumberFormatException nfe)
 			{
 				System.out.println("Invalid input. Enter a number between " + min + " and " + max);
 			}
-			if(input < min || input > max)
+			if (input < min || input > max)
 			{
 				System.out.println("Invalid input. Enter a number between " + min + " and " + max);
 			}
@@ -105,7 +105,7 @@ public class WeatherDataUI
 		LocalDate date = null;
 		boolean isCorrect = false;
 
-		while(!isCorrect)
+		while (!isCorrect)
 		{
 			System.out.println("Enter date (YYYY-MM-DD): ");
 			input = _scanner.nextLine().trim();
@@ -115,7 +115,7 @@ public class WeatherDataUI
 				date = LocalDate.parse(input);
 				isCorrect = true;
 			}
-			catch(DateTimeParseException e)
+			catch (DateTimeParseException e)
 			{
 				System.out.println("Invalid date");
 			}
@@ -176,11 +176,11 @@ public class WeatherDataUI
 	 */
 	private void presentResult(List<String> result)
 	{
-		if(result.size() == 0)
+		if (result.size() == 0)
 		{
 			System.out.println("No matching values for the provided query.");
 		}
-		for(String s : result)
+		for (String s : result)
 		{
 			System.out.println(s);
 		}

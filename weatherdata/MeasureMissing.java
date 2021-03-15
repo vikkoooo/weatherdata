@@ -2,9 +2,18 @@ package algo.weatherdata;
 
 import java.time.LocalDate;
 
+/**
+ * Projekt - Algoritmer och datastrukturer 2IS206
+ * 
+ * MeasureMissing class. It is needed to be able to sort results according to
+ * preferences.
+ * 
+ * @author Viktor Lundberg, vilu6614
+ * @version 1.0, 2021-03-15
+ */
+
 public class MeasureMissing
 {
-
 	/**
 	 * Instance variables
 	 */
@@ -14,8 +23,8 @@ public class MeasureMissing
 	/**
 	 * Constructor
 	 * 
-	 * @param date
-	 * @param missing
+	 * @param date    (LocalDate the date)
+	 * @param missing (number of missing values)
 	 */
 	public MeasureMissing(LocalDate date, int missing)
 	{
@@ -32,7 +41,7 @@ public class MeasureMissing
 	}
 
 	/**
-	 * @return the missing
+	 * @return number of missing values
 	 */
 	public int getMissing()
 	{

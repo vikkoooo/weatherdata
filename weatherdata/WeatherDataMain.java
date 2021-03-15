@@ -15,8 +15,9 @@ public class WeatherDataMain
 	public static void main(String[] args)
 	{
 		WeatherDataHandler weatherData = new WeatherDataHandler();
+		// Update file path here
 		String fileName = "/Users/viktorlundberg/eclipse-workspace/UU_algo_data_vecka_9_projekt/src/algo/smhi-opendata.csv";
-		if(args.length > 0)
+		if (args.length > 0)
 		{
 			fileName = args[0];
 		}
@@ -25,7 +26,7 @@ public class WeatherDataMain
 			weatherData.loadData(fileName);
 			new WeatherDataUI(weatherData).startUI();
 		}
-		catch(Exception e)
+		catch (Exception e)
 		{
 			System.out.println("Closing program ...");
 		}
