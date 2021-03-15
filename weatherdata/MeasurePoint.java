@@ -14,15 +14,15 @@ public class MeasurePoint
 	private double temperature;
 	private boolean approved;
 	private LocalDateTime dateTime;
-	
+
 	/**
 	 * Constructor
 	 * 
 	 * @param rowToSplit
 	 */
-	public MeasurePoint (String rowToSplit)
+	public MeasurePoint(String rowToSplit)
 	{
-		String [] splitted = rowToSplit.split(";");
+		String[] splitted = rowToSplit.split(";");
 		date = LocalDate.parse(splitted[0]);
 		time = LocalTime.parse(splitted[1]);
 		temperature = Double.parseDouble(splitted[2]);

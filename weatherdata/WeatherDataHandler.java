@@ -3,6 +3,7 @@ package algo.weatherdata;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -15,7 +16,7 @@ public class WeatherDataHandler
 	/**
 	 * Store data in TreeMap
 	 */
-	public Map<LocalDateTime, MeasurePoint> treeMeasures = new TreeMap<>();
+	public Map<LocalDateTime, MeasurePoint> dataMap = new TreeMap<>();
 
 	/**
 	 * Load weather data from file.
@@ -25,27 +26,33 @@ public class WeatherDataHandler
 	 */
 	public void loadData(String filePath) throws IOException
 	{
-		List<String> fileData = Files.readAllLines(Paths.get(filePath));
-
 		long startTime = System.currentTimeMillis(); // To track system time
-		int i = 0; // To see how many elements added
+		List<String> fileData = Files.readAllLines(Paths.get(filePath));
+		long estimatedTime = System.currentTimeMillis() - startTime;
+		System.out.println("Added " + fileData.size() + " Strings to List. Time: " + estimatedTime + " ms");
 
-		// Loop through the data input and create MeasurePoint objects from it. Store in
-		// TreeMap.
-		for (i = 0; i < fileData.size(); i++)
+		startTime = System.currentTimeMillis(); // To track system time
+
+		// Loop through the data input and create MeasurePoint objects from it.
+		// Store in
+		// Map.
+		for(int i = 0; i < fileData.size(); i++)
 		{
-			// Create new MeasurePoint. Constructor in MeasurePoint requires String as input
+			// Create new MeasurePoint. Constructor in MeasurePoint requires
+			// String as input
 			// to split the data.
 			MeasurePoint currentMeasure = new MeasurePoint(fileData.get(i));
-			// Key is DateTime object and value is MeasurePoint object.
-			treeMeasures.put(currentMeasure.getDateTime(), currentMeasure);
+			// Key is LocalDateTime object and value is MeasurePoint object.
+			dataMap.put(currentMeasure.getDateTime(), currentMeasure);
 		}
 		// Print elapsed time
-		long estimatedTime = System.currentTimeMillis() - startTime;
-		System.out.println("Added " + i + " elements to TreeMap. Time: " + estimatedTime + " ms");
+		estimatedTime = System.currentTimeMillis() - startTime;
+		System.out.println("Converted " + dataMap.size() + " Strings to MeasurePoints and added to Map. Time: "
+				+ estimatedTime + " ms");
 
 	}
 
+	// @formatter:off
 	/**
 	 * Search for average temperature for all dates between the two dates
 	 * (inclusive). Result is sorted by date (ascending). When searching from
@@ -54,109 +61,82 @@ public class WeatherDataHandler
 	 * degrees Celsius 2000-01-03 average temperature: 2.78 degrees Celsius
 	 * 
 	 * @param dateFrom start date (YYYY-MM-DD) inclusive
-	 * @param dateTo   end date (YYYY-MM-DD) inclusive
+	 * @param dateTo end date (YYYY-MM-DD) inclusive
 	 * @return average temperature for each date, sorted by date
 	 */
+	// @formatter:on
 	public List<String> averageTemperatures(LocalDate dateFrom, LocalDate dateTo)
 	{
 		long startTime = System.currentTimeMillis(); // To track system time
-		// Since we don't know how many elements to add beforehand use LinkedList
-		List<String> avgTemp = new LinkedList<>();
+		// Since we don't know how many elements to add beforehand use
+		// LinkedList
+		List<String> results = new LinkedList<>();
 
-		// We use a TreeMap to calculate
-		Map<LocalDate, Double> calcTree = new TreeMap<>();
-		// TreeMap as index counter
-		Map<LocalDate, Integer> indexTree = new TreeMap<>();
-
-		// Loop through the tree
-		for (Map.Entry<LocalDateTime, MeasurePoint> e : treeMeasures.entrySet())
+		// We iterate over the data and add it to a new tree, that we later use
+		// to
+		// calculate the average values from
+		Map<LocalDate, Stack<Double>> calcTree = new TreeMap<>();
+		// Iterate over data
+		for(Map.Entry<LocalDateTime, MeasurePoint> entry : dataMap.entrySet())
 		{
-			// When we find a date we are looking for stop and do something
-			if (!e.getKey().toLocalDate().isAfter(dateTo) && !e.getKey().toLocalDate().isBefore(dateFrom))
+			// When we find a date we are looking for, stop and do something
+			if(!entry.getKey().toLocalDate().isAfter(dateTo) && !entry.getKey().toLocalDate().isBefore(dateFrom))
 			{
-				// String date = e.getValue().getDate().toString();
-				// double temp = e.getValue().getTemperature();
-				// avgTemp.add(date + " current temp: " + temp + " degrees Celsius");
+				// Get data and add to tree
+				LocalDate date = entry.getValue().getDate();
+				double temp = entry.getValue().getTemperature();
 
-				LocalDate date = e.getValue().getDate();
-				double temp = e.getValue().getTemperature();
-
-				// Date does not exist yet, new date to add
-				if (!calcTree.containsKey(date))
+				// Date does not exist yet in tree, new date to add
+				if(!calcTree.containsKey(date))
 				{
-					calcTree.put(date, temp);
-				} else if (calcTree.containsKey(date))
+					Stack<Double> temperatures = new Stack<>();
+					temperatures.push(temp);
+					calcTree.put(date, temperatures);
+				}
+				// Date already existed just update the stack
+				else if(calcTree.containsKey(date))
 				{
-					double prevTemp = calcTree.get(date);
-					calcTree.replace(date, (prevTemp += temp));
+					calcTree.get(date).push(temp);
 				}
 			}
 		}
 
-		// Loop through the tree again
-		for (Map.Entry<LocalDateTime, MeasurePoint> f : treeMeasures.entrySet())
+		// Iterate over the previous tree
+		for(Map.Entry<LocalDate, Stack<Double>> entry : calcTree.entrySet())
 		{
-			// Same as before
-			if (!f.getKey().toLocalDate().isAfter(dateTo) && !f.getKey().toLocalDate().isBefore(dateFrom))
-			{
-				LocalDate date = f.getValue().getDate();
-				int i = 1;
-
-				// Date does not exist yet, new date to add
-				if (!indexTree.containsKey(date))
-				{
-					indexTree.put(date, i);
-
-				} else if (indexTree.containsKey(date))
-				{
-					int prevIndex = indexTree.get(date);
-					indexTree.replace(date, (prevIndex += i));
-				}
-
-			}
+			// Get average value from calcAverageOfStack method and round it
+			double average = calcAverageOfStack(entry.getValue());
+			double rounded = Math.round(average * 100.0) / 100.0;
+			// Add rounded result to our results list that we later return
+			results.add(entry.getKey() + " average temperature: " + rounded + " degrees Celsius");
 		}
-		
-		
-		
-
-		List<Double> calculatingList = new ArrayList<>();
-		
-		
-		for (Map.Entry<LocalDate, Double> h : calcTree.entrySet())
-		{
-			System.out.println("LocalDate: " + h.getKey() + ", Double: " + h.getValue());
-			calculatingList.add(h.getValue());
-		}
-		
-		
-		for (int i = 0; i < calculatingList.size(); i++)
-		{
-			System.out.println(calculatingList.get(i));
-		}
-		
-
-		for (Map.Entry<LocalDate, Integer> g : indexTree.entrySet())
-		{
-			int i = 0;
-			System.out.println("LocalDate: " + g.getKey() + ", Integer: " + g.getValue());
-			double total = calculatingList.get(i);
-			double averageTemp = total / g.getValue();
-			String date = g.getKey().toString();
-			avgTemp.add(date + " medel temp: " + averageTemp + " degress celsius");
-			i++;
-		}
-
-		
-
 
 		// Print elapsed time
 		long estimatedTime = System.currentTimeMillis() - startTime;
-		System.out.println("Added " + avgTemp.size() + " elements to LinkedList. Time: " + estimatedTime + " ms");
+		System.out.println("Added " + results.size() + " elements to LinkedList. Time: " + estimatedTime + " ms");
 
 		// Return
-		return avgTemp;
+		return results;
 	}
 
+	/**
+	 * Calculates the average value of all elements in the stack
+	 * 
+	 * @param stack to calculate from
+	 * @return the sum
+	 */
+	private double calcAverageOfStack(Stack<Double> stack)
+	{
+		int size = stack.size();
+		double result = 0;
+		while(!stack.empty())
+		{
+			result += stack.pop();
+		}
+		return (result / size);
+	}
+
+	// @formatter:off
 	/**
 	 * Search for missing values between the two dates (inclusive) assuming there
 	 * should be 24 measurement values for each day (once every hour). Result is
@@ -165,28 +145,179 @@ public class WeatherDataHandler
 	 * 2000-01-03 missing 1 values 2000-01-01 missing 0 values
 	 * 
 	 * @param dateFrom start date (YYYY-MM-DD) inclusive
-	 * @param dateTo   end date (YYYY-MM-DD) inclusive
+	 * @param dateTo end date (YYYY-MM-DD) inclusive
 	 * @return dates with missing values together with number of missing values for
 	 *         each date, sorted by number of missing values (descending)
 	 */
+	// @formatter:on
 	public List<String> missingValues(LocalDate dateFrom, LocalDate dateTo)
 	{
 		// TODO: Implements method
-		return null;
+		long startTime = System.currentTimeMillis(); // To track system time
+
+		// Since we don't know how many elements to search for beforehand use
+		// LinkedList
+		List<String> results = new LinkedList<>();
+		List<MeasureMissing> missing = new LinkedList<>();
+
+		// We iterate over the data and add it to a new tree, that we later use
+		// to
+		// check missing values from. The values we find is stored as Integer on
+		// values
+		// slot.
+		Map<LocalDate, Integer> calcTree = new TreeMap<>();
+		// Iterate over data
+		for(Map.Entry<LocalDateTime, MeasurePoint> entry : dataMap.entrySet())
+		{
+			// When we find a date we are looking for, stop and do something
+			if(!entry.getKey().toLocalDate().isAfter(dateTo) && !entry.getKey().toLocalDate().isBefore(dateFrom))
+			{
+				// Get date and add to tree with index counter as data
+				LocalDate date = entry.getValue().getDate();
+				int index = 1;
+				int assumedFound = 24;
+
+				// Date does not exist yet in tree, new date to add
+				if(!calcTree.containsKey(date))
+				{
+					calcTree.put(date, assumedFound - index);
+				}
+				// Date already existed just update the index
+				else if(calcTree.containsKey(date))
+				{
+					int prevIndex = calcTree.get(date);
+					calcTree.replace(date, (prevIndex -= index));
+				}
+			}
+		}
+
+		// Iterate over the previous tree
+		for(Map.Entry<LocalDate, Integer> entry : calcTree.entrySet())
+		{
+			// Create MeasureMissing objects and add to the missing list
+			MeasureMissing currentDate = new MeasureMissing(entry.getKey(), entry.getValue());
+			missing.add(currentDate);
+		}
+
+		// Sort the list according to preferences
+		missing.sort(
+				Comparator.comparing(MeasureMissing::getMissing).reversed().thenComparing(MeasureMissing::getDate));
+
+		// Loop through the list and add to String list
+		for(MeasureMissing entry : missing)
+		{
+			results.add(entry.getDate() + " missing " + entry.getMissing() + " values");
+		}
+
+		// Print elapsed time
+		long estimatedTime = System.currentTimeMillis() - startTime;
+		System.out.println("Added " + results.size() + " elements to LinkedList. Time: " + estimatedTime + " ms");
+
+		// Return
+		return results;
 	}
 
+	// @formatter:off
 	/**
 	 * Search for percentage of approved values between the two dates (inclusive).
 	 * When searching from 2000-01-01 to 2000-01-03 the result should be: Approved
 	 * values between 2000-01-01 and 2000-01-03: 32.86 %
 	 * 
 	 * @param dateFrom start date (YYYY-MM-DD) inclusive
-	 * @param dateTo   end date (YYYY-MM-DD) inclusive
+	 * @param dateTo end date (YYYY-MM-DD) inclusive
 	 * @return period and percentage of approved values for the period
 	 */
+	// @formatter:on
 	public List<String> approvedValues(LocalDate dateFrom, LocalDate dateTo)
 	{
-		// TODO: Implements method
-		return null;
+		long startTime = System.currentTimeMillis(); // To track system time
+
+		// Since we don't know how many elements to search for beforehand use
+		// LinkedList
+		List<String> results = new LinkedList<>();
+
+		if(isDateInData(dateFrom, dateTo))
+		{
+
+			// Variables to calculate
+			double approved = 0;
+			double notApproved = 0;
+
+			// Iterate over the data and search for approved values
+			for(Map.Entry<LocalDateTime, MeasurePoint> entry : dataMap.entrySet())
+			{
+				// When we find a date we are looking for, stop and do something
+				if(!entry.getKey().toLocalDate().isAfter(dateTo) && !entry.getKey().toLocalDate().isBefore(dateFrom))
+				{
+					if(entry.getValue().isApproved())
+					{
+						approved++;
+					}
+					else
+					{
+						notApproved++;
+					}
+				}
+			}
+
+			// Format
+			double approvedPercentage = approved / (approved + notApproved);
+			NumberFormat percentageFormat = NumberFormat.getPercentInstance();
+			percentageFormat.setMinimumFractionDigits(2);
+
+			// Add to list
+			results.add("Approved values between " + dateFrom + " and " + dateTo + ": "
+					+ percentageFormat.format(approvedPercentage));
+
+			// Print elapsed time
+			long estimatedTime = System.currentTimeMillis() - startTime;
+			System.out.println("Added " + results.size() + " elements to LinkedList. Time: " + estimatedTime + " ms");
+		}
+		return results;
 	}
+
+	public boolean isDateInData(LocalDate dateFrom, LocalDate dateTo)
+	{
+		TreeMap<LocalDateTime, MeasurePoint> treeMap = new TreeMap<>();
+		treeMap.putAll(dataMap);
+		LocalDateTime first = treeMap.firstKey();
+		LocalDateTime last = treeMap.lastKey();
+
+		if(dateFrom.isAfter(dateTo))
+		{
+			System.out.println("End date appears to be after start date. Try again.");
+			return false;
+		}
+		else if(dateTo.isBefore(dateFrom))
+		{
+			System.out.println("Start date appears to be before end date. Try again.");
+			return false;
+		}
+		else if(first.toLocalDate().isAfter(dateFrom))
+		{
+			System.out.println(
+					"Start date appears to be before first available data. First data in dataset: " + first.toString());
+			return false;
+		}
+		else if(last.toLocalDate().isBefore(dateFrom))
+		{
+			System.out.println(
+					"Start date appears to be after the last available data. Last data in dataset: " + last.toString());
+			return false;
+		}
+		else if(last.toLocalDate().isBefore(dateTo))
+		{
+			System.out.println(
+					"End date appears to be after the last available data. Last data in dataset: " + last.toString());
+			return false;
+		}
+		else if(first.toLocalDate().isAfter(dateTo))
+		{
+			System.out.println("End date appears to be before the first available data. First data in dataset: "
+					+ first.toString());
+			return false;
+		}
+		return true;
+	}
+
 }
