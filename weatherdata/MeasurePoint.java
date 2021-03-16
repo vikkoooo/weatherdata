@@ -12,7 +12,7 @@ import java.time.LocalTime;
  * dateTime (LocalDateTime)
  * 
  * @author Viktor Lundberg, vilu6614
- * @version 1.4, 2021-03-15
+ * @version 1.5, 2021-03-16
  */
 
 public class MeasurePoint
@@ -20,7 +20,6 @@ public class MeasurePoint
 	/**
 	 * Instance variables
 	 */
-	private String[] splitted;
 	private LocalDate date;
 	private LocalTime time;
 	private double temperature;
@@ -28,13 +27,13 @@ public class MeasurePoint
 	private LocalDateTime dateTime;
 
 	/**
-	 * Constructor. String to split 4 times with ; as delimiter
+	 * Constructor. Input is an array preferred size = 4 because we only handle the
+	 * first 4 indexes of the array.
 	 * 
-	 * @param rowToSplit, input tuple we want to split and create object from
+	 * @param splitted array of Strings with data from our measure
 	 */
-	public MeasurePoint(String rowToSplit)
+	public MeasurePoint(String[] splitted)
 	{
-		splitted = rowToSplit.split(";", 4);
 		date = LocalDate.parse(splitted[0]);
 		time = LocalTime.parse(splitted[1]);
 		temperature = Double.parseDouble(splitted[2]);

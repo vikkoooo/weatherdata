@@ -1,8 +1,8 @@
 package algo.weatherdata;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,7 +16,7 @@ import java.util.Map.Entry;
  * data in a Tree and also contains methods to search in the data.
  * 
  * @author Viktor Lundberg, vilu6614
- * @version 1.4, 2021-03-15
+ * @version 1.5, 2021-03-16
  */
 
 public class WeatherDataHandler
@@ -37,18 +37,28 @@ public class WeatherDataHandler
 	 */
 	public void loadData(String filePath) throws IOException
 	{
-		long start = System.currentTimeMillis();
-		// Load into list as Strings
-		List<String> fileData = Files.readAllLines(Paths.get(filePath));
-
-		// Loop through the list and create MeasurePoint objects from it. Store in Map
-		for (String entry : fileData)
+		try
 		{
-			MeasurePoint currentMeasure = new MeasurePoint(entry);
-			dataMap.put(currentMeasure.getDateTime(), currentMeasure);
+			// Create a BufferedReader
+			String line;
+			BufferedReader reader = new BufferedReader(new FileReader(filePath));
+
+			// As long as next tuple in BufferedReader is not empty, we have data to read
+			while ((line = reader.readLine()) != null)
+			{
+				// Split into array of size = 4 with delimiter ";". Create MeasurePoint objects,
+				// store in Map.
+				String[] splitted = line.split(";", 4);
+				MeasurePoint currentMeasure = new MeasurePoint(splitted);
+				dataMap.put(currentMeasure.getDateTime(), currentMeasure);
+			}
+			reader.close();
 		}
-		long finished = System.currentTimeMillis() - start;
-		System.out.println("time: " + finished + " ms");
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			System.out.println("Something went wrong reading the file");
+		}
 	}
 
 	// @formatter:off
@@ -114,7 +124,7 @@ public class WeatherDataHandler
 			// Return the list
 			return results;
 		}
-		// Return empty list
+		// Return empty list because we didn't do anything
 		List<String> empty = new ArrayList<>();
 		return empty;
 	}
@@ -184,27 +194,60 @@ public class WeatherDataHandler
 					}
 				}
 			}
-
 			// Now we have a map with key = LocalDate and value = missing values. Next step
 			// is to sort our results. LinkedHashMap is sorted in the order that we added
 			// data and does not change order. So we know it is sorted by Date ascending.
-			// Create a set view of the map in a list
-			List<Map.Entry<LocalDate, Integer>> sorted = new ArrayList<>(missingValues.entrySet());
-			// Sort by comparing value (missing values) in reverse order
-			Collections.sort(sorted, Entry.comparingByValue(Collections.reverseOrder()));
-			// Iterate over the map and add results to list. ArrayList is chosen because we
-			// know the size and navigating in it is fast.
+			// Use sortMapByValues method. true means sort by value descending
+			Map<LocalDate, Integer> sorted = sortMapByValues(missingValues, true);
+			// Iterate over the map and add results to list.
 			List<String> results = new ArrayList<>(sorted.size());
-			for (Map.Entry<LocalDate, Integer> entry : sorted)
+			for (Map.Entry<LocalDate, Integer> entry : sorted.entrySet())
 			{
 				results.add(entry.getKey() + " missing " + entry.getValue() + " values");
 			}
 			// Return the list
 			return results;
 		}
-		// Return empty list
+		// Return empty list because we didn't do anything
 		List<String> empty = new ArrayList<>();
 		return empty;
+	}
+
+	/**
+	 * Method to sort a map by values.
+	 * 
+	 * @param toSort     map to sort by values
+	 * @param descending true = sort descending. false = sort ascending
+	 * @return a sorted LinkedHashMap
+	 */
+	private <K, V extends Comparable<? super V>> Map<K, V> sortMapByValues(Map<K, V> toSort, boolean descending)
+	{
+		// Create a set view of the map in a list
+		List<Entry<K, V>> mapList = new ArrayList<>(toSort.entrySet());
+		// Create our return map
+		Map<K, V> results = new LinkedHashMap<>();
+
+		// Sort by value descending
+		if (descending)
+		{
+			Collections.sort(mapList, Entry.comparingByValue(Collections.reverseOrder()));
+			// Put in map
+			for (Entry<K, V> entry : mapList)
+			{
+				results.put(entry.getKey(), entry.getValue());
+			}
+		}
+		// Sort by value ascending
+		else
+		{
+			mapList.sort(Entry.comparingByValue());
+			// Put in map
+			for (Entry<K, V> entry : mapList)
+			{
+				results.put(entry.getKey(), entry.getValue());
+			}
+		}
+		return results;
 	}
 
 	// @formatter:off
@@ -260,7 +303,7 @@ public class WeatherDataHandler
 			// Return list
 			return results;
 		}
-		// Return empty list
+		// Return empty list because we didn't do anything
 		List<String> empty = new ArrayList<>();
 		return empty;
 	}
