@@ -78,7 +78,15 @@ public class WeatherDataHandler
 	public List<String> averageTemperatures(LocalDate dateFrom, LocalDate dateTo)
 	{
 		// Check that the user has entered dates that is present in the dataset
-		if (isDateInData(dateFrom, dateTo))
+		// If it's not, return.
+		if (!isDateInData(dateFrom, dateTo))
+		{
+			// Return empty list because we didn't do anything
+			List<String> empty = new ArrayList<>();
+			return empty;
+		}
+		// Else, run the method
+		else
 		{
 			// We iterate over the data and add what we find to a new tree that we use to
 			// calculate the average values from. The temperature data is added in stack for
@@ -109,7 +117,6 @@ public class WeatherDataHandler
 					}
 				}
 			}
-
 			// Iterate over the previous tree, calculate average temperature for the date
 			// and add to a results list. ArrayList is chosen because navigating in the list
 			// is fast and we know the size so it will not be full.
@@ -124,9 +131,6 @@ public class WeatherDataHandler
 			// Return the list
 			return results;
 		}
-		// Return empty list because we didn't do anything
-		List<String> empty = new ArrayList<>();
-		return empty;
 	}
 
 	/**
@@ -165,7 +169,15 @@ public class WeatherDataHandler
 	public List<String> missingValues(LocalDate dateFrom, LocalDate dateTo)
 	{
 		// Check that the user has entered dates that is present in the dataset
-		if (isDateInData(dateFrom, dateTo))
+		// If it's not, return.
+		if (!isDateInData(dateFrom, dateTo))
+		{
+			// Return empty list because we didn't do anything
+			List<String> empty = new ArrayList<>();
+			return empty;
+		}
+		// Else, run the method
+		else
 		{
 			// To search for missing values we assume all values are missing by default.
 			// Whenever we find a value, we update our hypothesis for the current date.
@@ -208,9 +220,6 @@ public class WeatherDataHandler
 			// Return the list
 			return results;
 		}
-		// Return empty list because we didn't do anything
-		List<String> empty = new ArrayList<>();
-		return empty;
 	}
 
 	/**
@@ -263,12 +272,20 @@ public class WeatherDataHandler
 	// @formatter:on
 	public List<String> approvedValues(LocalDate dateFrom, LocalDate dateTo)
 	{
-		// Standard size list. It will only contain one value anyway.
-		List<String> results = new ArrayList<>();
-
 		// Check that the user has entered dates that is present in the dataset
-		if (isDateInData(dateFrom, dateTo))
+		// If it's not, return.
+		if (!isDateInData(dateFrom, dateTo))
 		{
+			// Return empty list because we didn't do anything
+			List<String> empty = new ArrayList<>();
+			return empty;
+		}
+		// Else, run the method
+		else
+		{
+			// Standard size list. It will only contain one value anyway.
+			List<String> results = new ArrayList<>();
+
 			// Variables to calculate
 			double approved = 0;
 			double notApproved = 0;
@@ -291,7 +308,6 @@ public class WeatherDataHandler
 					}
 				}
 			}
-
 			// Format results
 			double approvedPercentage = approved / (approved + notApproved);
 			NumberFormat percentageFormat = NumberFormat.getPercentInstance();
@@ -303,9 +319,6 @@ public class WeatherDataHandler
 			// Return list
 			return results;
 		}
-		// Return empty list because we didn't do anything
-		List<String> empty = new ArrayList<>();
-		return empty;
 	}
 
 	/**
