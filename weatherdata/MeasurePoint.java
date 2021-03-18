@@ -12,7 +12,7 @@ import java.time.LocalTime;
  * dateTime (LocalDateTime)
  * 
  * @author Viktor Lundberg, vilu6614
- * @version 1.5, 2021-03-16
+ * @version 1.6, 2021-03-18
  */
 
 public class MeasurePoint

@@ -16,7 +16,7 @@ import java.util.Map.Entry;
  * data in a Tree and also contains methods to search in the data.
  * 
  * @author Viktor Lundberg, vilu6614
- * @version 1.5, 2021-03-16
+ * @version 1.6, 2021-03-18
  */
 
 public class WeatherDataHandler
@@ -26,7 +26,7 @@ public class WeatherDataHandler
 	 * Value is the object containing all the information about the current
 	 * MeasurePoint.
 	 */
-	private Map<LocalDateTime, MeasurePoint> dataMap = new TreeMap<>();
+	private TreeMap<LocalDateTime, MeasurePoint> dataMap = new TreeMap<>();
 
 	/**
 	 * Load weather data from file. Create MeasurePoint objects and store in
@@ -88,12 +88,15 @@ public class WeatherDataHandler
 		// Else, run the method
 		else
 		{
+			// Get a smaller subtree to iterate over from getSubTree method
+			Map<LocalDateTime, MeasurePoint> subTree = getSubTree(dataMap, dateFrom, dateTo);
+
 			// We iterate over the data and add what we find to a new tree that we use to
 			// calculate the average values from. The temperature data is added in stack for
 			// simplicity because push / pull operations is fast and order does not matter
 			// in this case.
 			Map<LocalDate, Stack<Double>> calcTree = new TreeMap<>();
-			for (Map.Entry<LocalDateTime, MeasurePoint> entry : dataMap.entrySet())
+			for (Map.Entry<LocalDateTime, MeasurePoint> entry : subTree.entrySet())
 			{
 				// When this condition is true, we have found a date we are looking for
 				if (!entry.getKey().toLocalDate().isAfter(dateTo) && !entry.getKey().toLocalDate().isBefore(dateFrom))
@@ -179,11 +182,14 @@ public class WeatherDataHandler
 		// Else, run the method
 		else
 		{
+			// Get a smaller subtree to iterate over from getSubTree method
+			Map<LocalDateTime, MeasurePoint> subTree = getSubTree(dataMap, dateFrom, dateTo);
+
 			// To search for missing values we assume all values are missing by default.
 			// Whenever we find a value, we update our hypothesis for the current date.
 			// Create a LinkedHashMap and iterate over tree.
 			Map<LocalDate, Integer> missingValues = new LinkedHashMap<>();
-			for (Map.Entry<LocalDateTime, MeasurePoint> entry : dataMap.entrySet())
+			for (Map.Entry<LocalDateTime, MeasurePoint> entry : subTree.entrySet())
 			{
 				// When this condition is true, we have found a date we are looking for
 				if (!entry.getKey().toLocalDate().isAfter(dateTo) && !entry.getKey().toLocalDate().isBefore(dateFrom))
@@ -283,6 +289,9 @@ public class WeatherDataHandler
 		// Else, run the method
 		else
 		{
+			// Get a smaller subtree to iterate over from getSubTree method
+			Map<LocalDateTime, MeasurePoint> subTree = getSubTree(dataMap, dateFrom, dateTo);
+
 			// Standard size list. It will only contain one value anyway.
 			List<String> results = new ArrayList<>();
 
@@ -291,7 +300,7 @@ public class WeatherDataHandler
 			double notApproved = 0;
 
 			// Iterate over the data and search for approved values
-			for (Map.Entry<LocalDateTime, MeasurePoint> entry : dataMap.entrySet())
+			for (Map.Entry<LocalDateTime, MeasurePoint> entry : subTree.entrySet())
 			{
 				// When this condition is true, we have found a date we are looking for
 				if (!entry.getKey().toLocalDate().isAfter(dateTo) && !entry.getKey().toLocalDate().isBefore(dateFrom))
@@ -367,6 +376,21 @@ public class WeatherDataHandler
 		}
 		// If none of these conditions before were met, return true.
 		return true;
+	}
+
+	/**
+	 * Method returns a subTree from the original TreeMap
+	 * 
+	 * @param map      to get subTree from
+	 * @param fromKey, first date to get subTree from. inclusive
+	 * @param toKey,   last date to get subTree from. inclusive
+	 * @return the new map
+	 */
+	private <K, V extends Comparable<? super V>> Map<LocalDateTime, MeasurePoint> getSubTree(
+			TreeMap<LocalDateTime, MeasurePoint> map, LocalDate fromKey, LocalDate toKey)
+	{
+		Map<LocalDateTime, MeasurePoint> subTree = map.subMap(fromKey.atStartOfDay(), toKey.plusDays(1).atStartOfDay());
+		return subTree;
 	}
 
 }
