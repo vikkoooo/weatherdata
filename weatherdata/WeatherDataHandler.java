@@ -16,7 +16,7 @@ import java.util.Map.Entry;
  * data in a Tree and also contains methods to search in the data.
  * 
  * @author Viktor Lundberg, vilu6614
- * @version 1.6, 2021-03-18
+ * @version 1.7, 2021-03-19
  */
 
 public class WeatherDataHandler
@@ -98,26 +98,22 @@ public class WeatherDataHandler
 			Map<LocalDate, Stack<Double>> calcTree = new TreeMap<>();
 			for (Map.Entry<LocalDateTime, MeasurePoint> entry : subTree.entrySet())
 			{
-				// When this condition is true, we have found a date we are looking for
-				if (!entry.getKey().toLocalDate().isAfter(dateTo) && !entry.getKey().toLocalDate().isBefore(dateFrom))
-				{
-					// Get data and add to tree
-					LocalDate date = entry.getValue().getDate();
-					double temp = entry.getValue().getTemperature();
+				// Get data and add to tree
+				LocalDate date = entry.getValue().getDate();
+				double temp = entry.getValue().getTemperature();
 
-					// Date does not exist yet in tree, new date to add
-					if (!calcTree.containsKey(date))
-					{
-						// Create new stack for the date and push temperature to stack. Put in tree
-						Stack<Double> temperatures = new Stack<>();
-						temperatures.push(temp);
-						calcTree.put(date, temperatures);
-					}
-					// Date already existed in tree, just update the stack
-					else if (calcTree.containsKey(date))
-					{
-						calcTree.get(date).push(temp);
-					}
+				// Date does not exist yet in tree, new date to add
+				if (!calcTree.containsKey(date))
+				{
+					// Create new stack for the date and push temperature to stack. Put in tree
+					Stack<Double> temperatures = new Stack<>();
+					temperatures.push(temp);
+					calcTree.put(date, temperatures);
+				}
+				// Date already existed in tree, just update the stack
+				else if (calcTree.containsKey(date))
+				{
+					calcTree.get(date).push(temp);
 				}
 			}
 			// Iterate over the previous tree, calculate average temperature for the date
@@ -187,34 +183,31 @@ public class WeatherDataHandler
 
 			// To search for missing values we assume all values are missing by default.
 			// Whenever we find a value, we update our hypothesis for the current date.
-			// Create a LinkedHashMap and iterate over tree.
+			// Create a LinkedHashMap and iterate over tree. LinkedHashMap is important
+			// because it remembers the order in which we put the elements.
 			Map<LocalDate, Integer> missingValues = new LinkedHashMap<>();
 			for (Map.Entry<LocalDateTime, MeasurePoint> entry : subTree.entrySet())
 			{
-				// When this condition is true, we have found a date we are looking for
-				if (!entry.getKey().toLocalDate().isAfter(dateTo) && !entry.getKey().toLocalDate().isBefore(dateFrom))
-				{
-					// Get the date and add to the tree. Update assumption.
-					LocalDate date = entry.getValue().getDate();
-					int change = 1;
-					int assumedMissing = 24;
+				// Get the date and add to the tree. Update assumption.
+				LocalDate date = entry.getValue().getDate();
+				int change = 1;
+				int assumedMissing = 24;
 
-					// Date does not exist yet in tree, new date to add
-					if (!missingValues.containsKey(date))
-					{
-						missingValues.put(date, assumedMissing - change);
-					}
-					// Date already existed just update the index
-					else if (missingValues.containsKey(date))
-					{
-						int prevMissing = missingValues.get(date);
-						missingValues.replace(date, (prevMissing -= change));
-					}
+				// Date does not exist yet in tree, new date to add
+				if (!missingValues.containsKey(date))
+				{
+					missingValues.put(date, assumedMissing - change);
+				}
+				// Date already existed just update the index
+				else if (missingValues.containsKey(date))
+				{
+					int prevMissing = missingValues.get(date);
+					missingValues.replace(date, (prevMissing -= change));
 				}
 			}
 			// Now we have a map with key = LocalDate and value = missing values. Next step
-			// is to sort our results. LinkedHashMap is sorted in the order that we added
-			// data and does not change order. So we know it is sorted by Date ascending.
+			// is to sort our results. Because we took our data from a TreeMap and put in
+			// the LinkedHashMap we know the map is currently sorted by Date ascending.
 			// Use sortMapByValues method. true means sort by value descending
 			Map<LocalDate, Integer> sorted = sortMapByValues(missingValues, true);
 			// Iterate over the map and add results to list.
@@ -229,39 +222,36 @@ public class WeatherDataHandler
 	}
 
 	/**
-	 * Method to sort a map by values.
+	 * Method to sort a map by values using LinkedHashMap.
 	 * 
 	 * @param toSort     map to sort by values
 	 * @param descending true = sort descending. false = sort ascending
 	 * @return a sorted LinkedHashMap
 	 */
-	private <K, V extends Comparable<? super V>> Map<K, V> sortMapByValues(Map<K, V> toSort, boolean descending)
+	private <K, V extends Comparable<? super V>> LinkedHashMap<K, V> sortMapByValues(Map<K, V> toSort,
+			boolean descending)
 	{
 		// Create a set view of the map in a list
 		List<Entry<K, V>> mapList = new ArrayList<>(toSort.entrySet());
 		// Create our return map
-		Map<K, V> results = new LinkedHashMap<>();
+		LinkedHashMap<K, V> results = new LinkedHashMap<>();
 
 		// Sort by value descending
 		if (descending)
 		{
 			Collections.sort(mapList, Entry.comparingByValue(Collections.reverseOrder()));
-			// Put in map
-			for (Entry<K, V> entry : mapList)
-			{
-				results.put(entry.getKey(), entry.getValue());
-			}
 		}
 		// Sort by value ascending
-		else
+		else if (!descending)
 		{
 			mapList.sort(Entry.comparingByValue());
-			// Put in map
-			for (Entry<K, V> entry : mapList)
-			{
-				results.put(entry.getKey(), entry.getValue());
-			}
 		}
+		// Put in map
+		for (Entry<K, V> entry : mapList)
+		{
+			results.put(entry.getKey(), entry.getValue());
+		}
+		// Return the map
 		return results;
 	}
 
@@ -302,19 +292,15 @@ public class WeatherDataHandler
 			// Iterate over the data and search for approved values
 			for (Map.Entry<LocalDateTime, MeasurePoint> entry : subTree.entrySet())
 			{
-				// When this condition is true, we have found a date we are looking for
-				if (!entry.getKey().toLocalDate().isAfter(dateTo) && !entry.getKey().toLocalDate().isBefore(dateFrom))
+				// If isApproved returns true, we have an approved value
+				if (entry.getValue().isApproved())
 				{
-					// If isApproved returns true, we have an approved value
-					if (entry.getValue().isApproved())
-					{
-						approved++;
-					}
-					// Otherwise it is not approved
-					else
-					{
-						notApproved++;
-					}
+					approved++;
+				}
+				// Otherwise it is not approved
+				else
+				{
+					notApproved++;
 				}
 			}
 			// Format results
@@ -332,20 +318,17 @@ public class WeatherDataHandler
 
 	/**
 	 * Method that checks that the user is searching for dates that are present in
-	 * the data.
+	 * the dataset.
 	 * 
-	 * @param dateFrom (date to search from)
-	 * @param dateTo   (date to search to)
+	 * @param dateFrom (date to search from inclusive)
+	 * @param dateTo   (date to search to inclusive)
 	 * @return true if date is present in data, false if not.
 	 */
 	public boolean isDateInData(LocalDate dateFrom, LocalDate dateTo)
 	{
-		// Copy over data from dataMap to a new TreeMap
-		TreeMap<LocalDateTime, MeasurePoint> treeMap = new TreeMap<>();
-		treeMap.putAll(dataMap);
 		// Find out first and last date
-		LocalDateTime first = treeMap.firstKey();
-		LocalDateTime last = treeMap.lastKey();
+		LocalDateTime first = dataMap.firstKey();
+		LocalDateTime last = dataMap.lastKey();
 
 		// End date is before start date
 		if (dateFrom.isAfter(dateTo))
@@ -379,17 +362,18 @@ public class WeatherDataHandler
 	}
 
 	/**
-	 * Method returns a subTree from the original TreeMap
+	 * Method returns a SortedMap subTree from the original TreeMap
 	 * 
-	 * @param map      to get subTree from
+	 * @param map      TreeMap to get subTree from
 	 * @param fromKey, first date to get subTree from. inclusive
 	 * @param toKey,   last date to get subTree from. inclusive
-	 * @return the new map
+	 * @return the new SortedMap
 	 */
-	private <K, V extends Comparable<? super V>> Map<LocalDateTime, MeasurePoint> getSubTree(
-			TreeMap<LocalDateTime, MeasurePoint> map, LocalDate fromKey, LocalDate toKey)
+	private SortedMap<LocalDateTime, MeasurePoint> getSubTree(TreeMap<LocalDateTime, MeasurePoint> map,
+			LocalDate fromKey, LocalDate toKey)
 	{
-		Map<LocalDateTime, MeasurePoint> subTree = map.subMap(fromKey.atStartOfDay(), toKey.plusDays(1).atStartOfDay());
+		SortedMap<LocalDateTime, MeasurePoint> subTree = map.subMap(fromKey.atStartOfDay(),
+				toKey.plusDays(1).atStartOfDay());
 		return subTree;
 	}
 
